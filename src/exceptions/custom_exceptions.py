@@ -78,6 +78,14 @@ class IncorrectLoginException(BaseException):
             status_code=401,
         )
 
+class UnauthorizedException(BaseException):
+    def __init__(self):
+        super().__init__(
+            error="Unauthorized",
+            message="Invalid token.",
+            status_code=401,
+        )
+
 class InternalErrorException(BaseException):
     def __init__(self):
         super().__init__(

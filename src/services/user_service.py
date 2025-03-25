@@ -4,6 +4,7 @@ from schemas.user_schema import (
     ConfirmUserSignUpResponse,
     UserLoginResponse,
     RefreshTokenResponse,
+    UserData,
 )
 from services.cognito_service import CognitoService
 from repositories.user_repository import UserRepository
@@ -61,14 +62,18 @@ class UserService:
         authentication_result["RefreshToken"] = refresh_token
 
         return RefreshTokenResponse(authTokens=authentication_result)
-    
+
     def resend_confirmation_code(self, email: str):
         cognito_service = CognitoService()
         cognito_service.resend_confirmation_code(email)
 
-    def change_password(self, previous_password: str, proposed_password: str, access_token: str):
+    def change_password(
+        self, previous_password: str, proposed_password: str, access_token: str
+    ):
         cognito_service = CognitoService()
-        cognito_service.change_password(previous_password, proposed_password, access_token)
+        cognito_service.change_password(
+            previous_password, proposed_password, access_token
+        )
 
     def forgot_password(self, email: str):
         cognito_service = CognitoService()
@@ -79,12 +84,9 @@ class UserService:
         cognito_service.confirm_forgot_password(email, confirm_code, password)
 
     def get_user_data(self, user_id):
-        key = {
-            "PK": f"USER#{user_id}",
-            "SK": "PROFILE"
-        }
+        key = {"PK": f"USER#{user_id}", "SK": "PROFILE"}
 
-        response = self.user_repository.get_item(key)
+        response = self.user_repository.get_user(key)
 
         if not response:
             raise NotFoundException(f"User {user_id}")

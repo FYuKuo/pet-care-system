@@ -10,7 +10,7 @@ class BasicRepository:
         dynamo_client = aws_clients.get_dynamo_client()
         self.table = dynamo_client.Table(table_name)
 
-    def get_item(self, key: dict) -> dict | None:
+    def get_item(self, key: dict) -> dict:
 
         response = self.table.get_item(Key=key)
 

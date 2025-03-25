@@ -10,6 +10,8 @@ class BaseConfig:
     COGNITO_USER_POOL_ID = os.getenv("COGNITO_USER_POOL_ID")
     COGNITO_CLIENT_ID = os.getenv("COGNITO_CLIENT_ID")
     S3_BUCKET = os.getenv("S3_BUCKET")
+    COGNITO_ISSUER = f"https://cognito-idp.{AWS_REGION}.amazonaws.com/{COGNITO_USER_POOL_ID}"
+    COGNITO_JWKS_URL = f"{COGNITO_ISSUER}/.well-known/jwks.json"
 
 class DevConfig(BaseConfig):
     DEBUG = True
