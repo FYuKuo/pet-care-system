@@ -1,0 +1,1 @@
+PET_CARE_SYSTEM_TABLE: str = "pet-care-system"
