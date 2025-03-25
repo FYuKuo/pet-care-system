@@ -4,5 +4,5 @@ __pycache__/
 # poetry
 poetry.lock
 
-# .evn
+# .env
 .env
