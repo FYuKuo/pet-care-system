@@ -14,9 +14,11 @@ from schemas.user_schema import (
     ForgotPasswordRequest,
     ConfirmForgotPasswordRequest,
     UserData,
+    UpdateUserProfileRequest,
 )
 from services.user_service import UserService
 from dependencies.auth import verify_access_token
+from dependencies.permissions import check_user_permission
 
 router = APIRouter()
 
@@ -120,5 +122,31 @@ def get_user_profile(user_claims: dict = Depends(verify_access_token)):
     user_id = user_claims.get("sub")
     user_service = UserService()
     response = user_service.get_user_data(user_id)
+
+    return response
+
+
+@router.put("/{user_id}", response_model=UserData)
+def update_user_profile(
+    user_id: str,
+    update_user_data: UpdateUserProfileRequest,
+    user_claims: dict = Depends(check_user_permission),
+):
+
+    user_service = UserService()
+    response = user_service.update_user_data(
+        user_id, name=update_user_data.name, gender=update_user_data.gender
+    )
+
+    return response
+
+@router.delete("/{user_id}", response_model=UserData)
+def update_user_profile(
+    user_id: str,
+    user_claims: dict = Depends(check_user_permission),
+):
+
+    user_service = UserService()
+    response = user_service.delete_user_data(user_id)
 
     return response

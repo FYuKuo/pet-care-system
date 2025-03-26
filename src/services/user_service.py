@@ -31,10 +31,10 @@ class UserService:
 
         # save user data to DB
         user_model = UserModel(
-            user_id=user_id, email=email, name=name, created_at=current_time
+            userId=user_id, email=email, name=name, createdAt=current_time
         )
 
-        self.user_repository.create_user(user_model.to_dict())
+        self.user_repository.create_user(user_model.model_dump())
 
         return UserSignUpResponse(userId=user_id, name=name, email=email)
 
@@ -90,5 +90,35 @@ class UserService:
 
         if not response:
             raise NotFoundException(f"User {user_id}")
-        
+
         return response
+
+    def update_user_data(self, user_id: str, *, name: str = None, gender: str = None):
+
+        # update cognito user data
+        user_attributes = {
+            **({"name": name} if name else {}),
+            **({"gender": gender} if gender else {}),
+        }
+
+        cognito_service = CognitoService()
+        cognito_service.update_user_attributes(user_id, user_attributes)
+
+        # update DynamoDB user data
+        user_model = UserModel(userId=user_id, name=name, gender=gender)
+        response = self.user_repository.update_user(user_model)
+
+        return response
+    
+    def delete_user_data(self, user_id: str):
+        key = {"PK": f"USER#{user_id}", "SK": "PROFILE"}
+
+        cognito_service = CognitoService()
+        cognito_service.delete_user(user_id)
+
+        # update DynamoDB user data
+        response = self.user_repository.delete_user(key)
+
+        return response
+    
+
