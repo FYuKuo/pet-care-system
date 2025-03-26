@@ -1,5 +1,10 @@
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field, EmailStr, conint
+from typing import Optional
+from enum import Enum
 
+class GenderEnum(str, Enum):
+    FEMALE = "0"
+    MALE = "1"
 
 class UserSignUpRequest(BaseModel):
     name: str = Field(description="user name")
@@ -33,6 +38,8 @@ class UserData(BaseModel):
     userId: str = Field(description="user id")
     name: str = Field(description="user name")
     email: str = Field(description="user email")
+    gender: Optional[str] = Field(None, description="user gender")
+    photo: Optional[str] = Field(None, description="user photo")
 
 class UserLoginResponse(BaseModel):
     authTokens: AuthTokens
@@ -61,4 +68,10 @@ class ConfirmForgotPasswordRequest(BaseModel):
     email: EmailStr = Field(description="user email")
     confirmCode: str = Field(description="confirm code")
     password: str = Field(description="user password")
+
+class UpdateUserProfileRequest(BaseModel):
+    email: EmailStr = Field(None, description="user email")
+    name: str = Field(None, description="user name")
+    gender: GenderEnum = Field(None, description="user gender, 0: Female, 1: Male")
+
 

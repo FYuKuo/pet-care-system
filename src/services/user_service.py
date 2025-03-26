@@ -4,6 +4,7 @@ from schemas.user_schema import (
     ConfirmUserSignUpResponse,
     UserLoginResponse,
     RefreshTokenResponse,
+    UserData,
 )
 from services.cognito_service import CognitoService
 from repositories.user_repository import UserRepository
@@ -30,10 +31,10 @@ class UserService:
 
         # save user data to DB
         user_model = UserModel(
-            user_id=user_id, email=email, name=name, created_at=current_time
+            userId=user_id, email=email, name=name, createdAt=current_time
         )
 
-        self.user_repository.create_user(user_model.to_dict())
+        self.user_repository.create_user(user_model.model_dump())
 
         return UserSignUpResponse(userId=user_id, name=name, email=email)
 
@@ -61,14 +62,18 @@ class UserService:
         authentication_result["RefreshToken"] = refresh_token
 
         return RefreshTokenResponse(authTokens=authentication_result)
-    
+
     def resend_confirmation_code(self, email: str):
         cognito_service = CognitoService()
         cognito_service.resend_confirmation_code(email)
 
-    def change_password(self, previous_password: str, proposed_password: str, access_token: str):
+    def change_password(
+        self, previous_password: str, proposed_password: str, access_token: str
+    ):
         cognito_service = CognitoService()
-        cognito_service.change_password(previous_password, proposed_password, access_token)
+        cognito_service.change_password(
+            previous_password, proposed_password, access_token
+        )
 
     def forgot_password(self, email: str):
         cognito_service = CognitoService()
@@ -79,14 +84,41 @@ class UserService:
         cognito_service.confirm_forgot_password(email, confirm_code, password)
 
     def get_user_data(self, user_id):
-        key = {
-            "PK": f"USER#{user_id}",
-            "SK": "PROFILE"
-        }
+        key = {"PK": f"USER#{user_id}", "SK": "PROFILE"}
 
-        response = self.user_repository.get_item(key)
+        response = self.user_repository.get_user(key)
 
         if not response:
             raise NotFoundException(f"User {user_id}")
-        
+
         return response
+
+    def update_user_data(self, user_id: str, *, name: str = None, gender: str = None):
+
+        # update cognito user data
+        user_attributes = {
+            **({"name": name} if name else {}),
+            **({"gender": gender} if gender else {}),
+        }
+
+        cognito_service = CognitoService()
+        cognito_service.update_user_attributes(user_id, user_attributes)
+
+        # update DynamoDB user data
+        user_model = UserModel(userId=user_id, name=name, gender=gender)
+        response = self.user_repository.update_user(user_model)
+
+        return response
+    
+    def delete_user_data(self, user_id: str):
+        key = {"PK": f"USER#{user_id}", "SK": "PROFILE"}
+
+        cognito_service = CognitoService()
+        cognito_service.delete_user(user_id)
+
+        # update DynamoDB user data
+        response = self.user_repository.delete_user(key)
+
+        return response
+    
+

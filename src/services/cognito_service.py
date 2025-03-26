@@ -15,10 +15,7 @@ class CognitoService:
         self.cognito_idp_client = aws_clients.get_cognito_idp_client()
 
     def sign_up(self, username: str, password: str, user_attributes: dict) -> dict:
-        user_attributes_array = []
-        if user_attributes:
-            for key, value in user_attributes.items():
-                user_attributes_array.append({"Name": key, "Value": value})
+        user_attributes_array = self._format_user_attributes(user_attributes)
 
         try:
             response = self.cognito_idp_client.sign_up(
@@ -86,7 +83,7 @@ class CognitoService:
             self.cognito_idp_client.exceptions.UserNotFoundException,
             self.cognito_idp_client.exceptions.InvalidParameterException,
         ) as e:
-            raise PermissionDeniedException("Refresh token")
+            raise PermissionDeniedException()
         except self.cognito_idp_client.exceptions.UserNotConfirmedException as e:
             raise UserNotConfirmedException()
         except self.cognito_idp_client.exceptions.TooManyRequestsException as e:
@@ -195,3 +192,47 @@ class CognitoService:
             raise TooManyRequestsException()
 
         return response
+    
+    def update_user_attributes(self, username: str, user_attributes: dict):
+        user_attributes_array = self._format_user_attributes(user_attributes)
+
+        try:
+            response = self.cognito_idp_client.admin_update_user_attributes(
+                UserPoolId=config.COGNITO_USER_POOL_ID,
+                Username=username,
+                UserAttributes=user_attributes_array,
+            )
+        except (
+            self.cognito_idp_client.exceptions.NotAuthorizedException,
+            self.cognito_idp_client.exceptions.UserNotFoundException,
+        ) as e:
+            raise PermissionDeniedException()
+        except (
+            self.cognito_idp_client.exceptions.TooManyRequestsException,
+        ) as e:
+            raise TooManyRequestsException()
+
+        return response
+    
+    def delete_user(self, username: str):
+
+        try:
+            response = self.cognito_idp_client.admin_delete_user(
+                UserPoolId=config.COGNITO_USER_POOL_ID,
+                Username=username,
+            )
+        except (
+            self.cognito_idp_client.exceptions.NotAuthorizedException,
+            self.cognito_idp_client.exceptions.UserNotFoundException,
+        ) as e:
+            raise PermissionDeniedException()
+        except (
+            self.cognito_idp_client.exceptions.TooManyRequestsException,
+        ) as e:
+            raise TooManyRequestsException()
+
+        return response
+
+
+    def _format_user_attributes(self, user_attributes: dict) -> list:
+        return [{"Name": key, "Value": value} for key, value in user_attributes.items()]

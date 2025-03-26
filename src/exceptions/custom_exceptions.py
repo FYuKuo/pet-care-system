@@ -24,11 +24,11 @@ class AlreadyExistsException(BaseException):
 
 
 class PermissionDeniedException(BaseException):
-    def __init__(self, resource_name: str):
+    def __init__(self):
         super().__init__(
             error="PERMISSION DENIED",
-            message=f"{resource_name} permission denied",
-            status_code=400,
+            message=f"You do not have permission to perform this action. Please check your permissions",
+            status_code=403,
         )
 
 
@@ -75,6 +75,14 @@ class IncorrectLoginException(BaseException):
         super().__init__(
             error="Unauthorized",
             message="Invalid username or password.",
+            status_code=401,
+        )
+
+class UnauthorizedException(BaseException):
+    def __init__(self):
+        super().__init__(
+            error="Unauthorized",
+            message="Invalid token.",
             status_code=401,
         )
 
