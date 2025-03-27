@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from routers import users
+from routers import users, pets
 from exceptions.custom_exceptions import (
     BaseException,
     MissingParameterException,
@@ -22,7 +22,8 @@ def read_root():
     return {"Hello": "World"}
 
 
-app.include_router(users.router, prefix="/users")
+app.include_router(users.router, prefix="/users", tags=["users"])
+app.include_router(pets.router, prefix="/pets", tags=["pets"])
 
 
 @app.middleware("http")
