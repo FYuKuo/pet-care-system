@@ -18,9 +18,12 @@ class UserRepository(BasicRepository):
     def create_user(self, user_data: dict):
 
         try:
-            self.create_item(user_data)
+            self.create_item(
+                user_data,
+                condition_expression="attribute_not_exists(PK) AND attribute_not_exists(SK)",
+            )
         except DBConditionalCheckFailedException:
-            raise AlreadyExistsException("Email")
+            raise AlreadyExistsException("User")
         except DBException:
             raise InternalErrorException()
 
@@ -54,12 +57,13 @@ class UserRepository(BasicRepository):
                 update_expression,
                 expression_value,
                 expression_attribute_names=expression_attribute_names,
+                condition_expression="attribute_exists(PK) AND attribute_exists(SK)",
             )
         except DBConditionalCheckFailedException:
             raise NotFoundException("User")
 
         return self._parse_user_data(response["Attributes"])
-    
+
     def delete_user(self, key: dict):
         try:
             response = self.delete_item(key)
