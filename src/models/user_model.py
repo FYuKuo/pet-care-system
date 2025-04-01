@@ -9,7 +9,7 @@ class UserModel(BaseModel):
     gender: Optional[str] = Field(None)
     photo: Optional[str] | None = Field(None)
     createdAt: Optional[int] = Field(None)
-    updatedAt: int = Field(int(time.time()))
+    updatedAt: int = Field(int(time.time() * 1000))
 
     @property
     def pk(self) -> str:

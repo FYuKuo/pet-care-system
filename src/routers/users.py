@@ -141,7 +141,7 @@ def update_user_profile(
     return response
 
 @router.delete("/{user_id}", response_model=UserData)
-def update_user_profile(
+def delete_user_profile(
     user_id: str,
     user_claims: dict = Depends(check_user_permission),
 ):

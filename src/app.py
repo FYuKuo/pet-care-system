@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from routers import users, pets
+from routers import users, pets, records
 from exceptions.custom_exceptions import (
     BaseException,
     MissingParameterException,
@@ -24,6 +24,7 @@ def read_root():
 
 app.include_router(users.router, prefix="/users", tags=["users"])
 app.include_router(pets.router, prefix="/pets", tags=["pets"])
+app.include_router(records.router, prefix="/records", tags=["records"])
 
 
 @app.middleware("http")
@@ -60,7 +61,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
     loc = first_error["loc"]
     filtered_loc = loc[1:] if loc[0] in ("body", "query", "path") else loc
-    field_string = ".".join(filtered_loc)
+    field_string = ".".join(map(str, filtered_loc))
 
     msg = first_error["msg"]
 

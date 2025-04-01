@@ -43,7 +43,7 @@ def get_pet(pet_id: str, user_claims: dict = Depends(verify_access_token)):
 
 
 @router.delete("/{pet_id}", response_model=PetData)
-def get_pet(pet_id: str, user_claims: dict = Depends(verify_access_token)):
+def delete_pet(pet_id: str, user_claims: dict = Depends(verify_access_token)):
     user_id = user_claims.get("sub")
     pet_service = PetService(user_id)
     response = pet_service.delete_pet(pet_id)
@@ -52,7 +52,7 @@ def get_pet(pet_id: str, user_claims: dict = Depends(verify_access_token)):
 
 
 @router.put("/{pet_id}", response_model=PetData)
-def get_pet(
+def update_pet(
     pet_id: str,
     pet_data: UpdatePetRequest,
     user_claims: dict = Depends(verify_access_token),

@@ -21,7 +21,7 @@ class UserService:
         name = user_data.name
         email = user_data.email
         password = user_data.password
-        current_time = int(time.time())
+        current_time = int(time.time() * 1000)
 
         cognito_service = CognitoService()
 

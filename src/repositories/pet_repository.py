@@ -29,7 +29,7 @@ class PetRepository(BasicRepository):
     def create_pet(self, pet_data: dict):
 
         try:
-            self.create_item(
+            response = self.create_item(
                 pet_data,
                 condition_expression="attribute_not_exists(PK) AND attribute_not_exists(SK)",
             )
@@ -37,6 +37,8 @@ class PetRepository(BasicRepository):
             raise AlreadyExistsException("Pet")
         except DBException:
             raise InternalErrorException()
+        
+        return response
 
     def query_pets(self, user_id: str) -> list[PetData]:
         response = []

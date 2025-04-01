@@ -46,7 +46,9 @@ class BasicRepository:
         condition_expression: str = None,
     ) -> dict:
 
+        print(f"==============================>>>>> {expression_value}")
         expression_value = self._serialize_item(expression_value)
+
         kwargs = {
             "Key": key,
             "UpdateExpression": update_expression,
