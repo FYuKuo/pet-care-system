@@ -28,7 +28,7 @@ class PetService:
 
     def create_pet(self, pet_data: CreatePetRequest):
         pet_id = str(uuid.uuid4())
-        current_time = int(time.time())
+        current_time = int(time.time() * 1000)
 
         pet_model = self._build_pet_model(pet_id, pet_data)
         pet_model.createdAt = current_time
