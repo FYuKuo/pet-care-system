@@ -18,6 +18,7 @@ class UrineTypeEnum(Enum):
     CLOUDY = "1"
     OLIGURIA = "2"
     ANURIA = "3"
+    BLOODY = "4"
     OTHER = "99"
 
 
@@ -59,7 +60,7 @@ class BaseRecordData(BaseModel):
     stoolDetail: Optional[str] = Field(None, description="pet stool detail")
     urine: Optional[UrineTypeEnum] = Field(
         None,
-        description="pet urine, 0: NORMAL, 1: CLOUDY, 2: OLIGURIA, 3: ANURIA, 99: OTHER",
+        description="pet urine, 0: NORMAL, 1: CLOUDY, 2: OLIGURIA, 3: ANURIA, 4: BLOODY, 99: OTHER",
     )
     urineDetail: Optional[str] = Field(None, description="pet urine detail")
     mentalState: Optional[MentalStateEnum] = Field(
