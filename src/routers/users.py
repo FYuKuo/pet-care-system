@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, Depends
+from fastapi import APIRouter, Request, Depends, Response
 from schemas.user_schema import (
     UserSignUpRequest,
     UserSignUpResponse,
@@ -19,11 +19,12 @@ from schemas.user_schema import (
 from services.user_service import UserService
 from dependencies.auth import verify_access_token
 from dependencies.permissions import check_user_permission
+from utils.auth_cookie import AuthCookie
 
 router = APIRouter()
 
 
-@router.post("/signup", response_model=UserSignUpResponse)
+@router.post("/auth/signup", response_model=UserSignUpResponse)
 def user_sign_up(sign_up_data: UserSignUpRequest):
     user_service = UserService()
     response = user_service.user_sign_up(sign_up_data)
@@ -31,7 +32,7 @@ def user_sign_up(sign_up_data: UserSignUpRequest):
     return response
 
 
-@router.post("/confirm_user_signup", response_model=ConfirmUserSignUpResponse)
+@router.post("/auth/confirm_user_signup", response_model=ConfirmUserSignUpResponse)
 def confirm_user_signup(confirm_signup_data: ConfirmUserSignUpRequest):
     user_service = UserService()
     response = user_service.confirm_user_signup(
@@ -41,35 +42,46 @@ def confirm_user_signup(confirm_signup_data: ConfirmUserSignUpRequest):
     return response
 
 
-@router.post("/login", response_model=UserLoginResponse)
-def login(login_data: UserLoginRequest):
+@router.post("/auth/login", response_model=UserLoginResponse)
+def login(login_data: UserLoginRequest, response: Response):
     user_service = UserService()
-    response = user_service.login(login_data.email, login_data.password)
+    result = user_service.login(login_data.email, login_data.password)
 
-    return response
+    AuthCookie.set_login_cookies(response, result.authTokens.accessToken, result.authTokens.refreshToken, result.authTokens.expiresIn)
+
+    return result
 
 
-@router.post("/logout")
+@router.post("/auth/logout")
 def logout(
-    logout_data: UserLogoutRequest,
+    request: Request,
+    response: Response,
     user_claims: dict = Depends(verify_access_token),
 ):
+    refresh_token = request.cookies.get("refreshToken")
+    
     user_service = UserService()
-    user_service.logout(logout_data.refreshToken)
+    user_service.logout(refresh_token)
+
+    AuthCookie.clear_auth_cookies(response)
 
     return {}
 
 
-@router.post("/refresh_token_auth", response_model=RefreshTokenResponse)
-def refresh_token_auth(refresh_token_data: RefreshTokenRequest):
+@router.post("/auth/refresh_token_auth")
+def refresh_token_auth(request: Request, response: Response):
+
+    refresh_token = request.cookies.get("refreshToken")
 
     user_service = UserService()
-    response = user_service.refresh_token(refresh_token_data.refreshToken)
+    result = user_service.refresh_token(refresh_token)
 
-    return response
+    AuthCookie.set_login_cookies(response, result.authTokens.accessToken, result.authTokens.refreshToken, result.authTokens.expiresIn)
+
+    return result
 
 
-@router.post("/resend_confirmation_code")
+@router.post("/auth/resend_confirmation_code")
 def resend_confirmation_code(resend_code_data: ResendConfirmationCodeRequest):
     user_service = UserService()
     user_service.resend_confirmation_code(resend_code_data.email)
@@ -96,7 +108,7 @@ def change_password(
     return {}
 
 
-@router.post("/forgot_password")
+@router.post("/auth/forgot_password")
 def forgot_password(forgot_password_data: ForgotPasswordRequest):
     user_service = UserService()
     user_service.forgot_password(forgot_password_data.email)
@@ -104,7 +116,7 @@ def forgot_password(forgot_password_data: ForgotPasswordRequest):
     return {}
 
 
-@router.post("/confirm_forgot_password")
+@router.post("/auth/confirm_forgot_password")
 def confirm_forgot_password(confirm_forgot_password_data: ConfirmForgotPasswordRequest):
     user_service = UserService()
     user_service.confirm_forgot_password(
@@ -143,10 +155,13 @@ def update_user_profile(
 @router.delete("/{user_id}", response_model=UserData)
 def delete_user_profile(
     user_id: str,
+    response: Response,
     user_claims: dict = Depends(check_user_permission),
 ):
 
     user_service = UserService()
-    response = user_service.delete_user_data(user_id)
+    result = user_service.delete_user_data(user_id)
 
-    return response
+    AuthCookie.clear_auth_cookies(response)
+
+    return result

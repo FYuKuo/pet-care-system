@@ -8,7 +8,7 @@ from exceptions.custom_exceptions import (
     IncorrectLoginException,
     PermissionDeniedException,
 )
-
+import botocore
 
 class CognitoService:
     def __init__(self):
@@ -41,6 +41,7 @@ class CognitoService:
             self.cognito_idp_client.exceptions.ExpiredCodeException,
             self.cognito_idp_client.exceptions.NotAuthorizedException,
             self.cognito_idp_client.exceptions.CodeMismatchException,
+            botocore.exceptions.ParamValidationError,
         ) as e:
             raise InvalidParameterException("ConfirmationCode", message=e)
 
@@ -61,6 +62,8 @@ class CognitoService:
             self.cognito_idp_client.exceptions.UserNotFoundException,
             self.cognito_idp_client.exceptions.InvalidParameterException,
         ) as e:
+            if 'Password attempts exceeded' in str(e):
+                raise TooManyRequestsException()
             raise IncorrectLoginException()
         except self.cognito_idp_client.exceptions.UserNotConfirmedException as e:
             raise UserNotConfirmedException()
@@ -138,6 +141,7 @@ class CognitoService:
             self.cognito_idp_client.exceptions.ExpiredCodeException,
             self.cognito_idp_client.exceptions.NotAuthorizedException,
             self.cognito_idp_client.exceptions.CodeMismatchException,
+            botocore.exceptions.ParamValidationError,
         ) as e:
             raise InvalidParameterException("ConfirmationCode", message=e)
         except self.cognito_idp_client.exceptions.InvalidPasswordException as e:

@@ -57,7 +57,7 @@ class InvalidParameterException(BaseException):
 class UserNotConfirmedException(BaseException):
     def __init__(self):
         super().__init__(
-            error="USER NOT CONFIRMEd",
+            error="USER NOT CONFIRMED",
             message="user not confirmed",
             status_code=401,
         )

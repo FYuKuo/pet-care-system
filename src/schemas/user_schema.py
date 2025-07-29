@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field, EmailStr, conint
 from typing import Optional
 from enum import Enum
+import time
 
 class GenderEnum(str, Enum):
     FEMALE = "0"
@@ -33,6 +34,12 @@ class AuthTokens(BaseModel):
     tokenType: str = Field(validation_alias="TokenType",description="The intended use of the token, for example Bearer.")
     refreshToken: str = Field(validation_alias="RefreshToken",description="Your user’s refresh token.")
     idToken: str = Field(validation_alias="IdToken",description="Your user’s ID token.")
+    expiresAt: Optional[int] = Field(None, description="The expiration time of the token.")
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.expiresAt = int(time.time()) + self.expiresIn
+        print(self.expiresAt)
 
 class UserData(BaseModel):
     userId: str = Field(description="user id")

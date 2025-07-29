@@ -35,7 +35,8 @@ def decode_jwt_token(token: str) -> dict:
             token,
             key=public_key,  # 公鑰
             algorithms=["RS256"],  # Cognito 預設使用 RS256
-            issuer=config.COGNITO_ISSUER  # Token 發行者
+            issuer=config.COGNITO_ISSUER,  # Token 發行者
+            leeway=120
         )
 
         return decoded_token  # 成功驗證後回傳 Token 內的資訊
