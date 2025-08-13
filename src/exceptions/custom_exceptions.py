@@ -54,6 +54,15 @@ class InvalidParameterException(BaseException):
         )
 
 
+class UnexpectedParameterException(BaseException):
+    def __init__(self, parameter_name: str):
+        super().__init__(
+            error="UNEXPECTED PARAMETER",
+            message=f"Unexpected parameter provided: {parameter_name}",
+            status_code=400,
+        )
+
+
 class UserNotConfirmedException(BaseException):
     def __init__(self):
         super().__init__(
@@ -61,6 +70,7 @@ class UserNotConfirmedException(BaseException):
             message="user not confirmed",
             status_code=401,
         )
+
 
 class TooManyRequestsException(BaseException):
     def __init__(self):
@@ -70,6 +80,7 @@ class TooManyRequestsException(BaseException):
             status_code=429,
         )
 
+
 class IncorrectLoginException(BaseException):
     def __init__(self):
         super().__init__(
@@ -78,6 +89,7 @@ class IncorrectLoginException(BaseException):
             status_code=401,
         )
 
+
 class UnauthorizedException(BaseException):
     def __init__(self):
         super().__init__(
@@ -85,6 +97,7 @@ class UnauthorizedException(BaseException):
             message="Invalid token.",
             status_code=401,
         )
+
 
 class InternalErrorException(BaseException):
     def __init__(self):
@@ -98,6 +111,7 @@ class InternalErrorException(BaseException):
 class DBConditionalCheckFailedException(Exception):
     def __init__(self):
         super().__init__()
+
 
 class DBException(Exception):
     def __init__(self):

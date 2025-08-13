@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Request, Depends
 from dependencies.auth import verify_access_token
-from dependencies.permissions import check_user_permission
 from schemas.record_schema import (
     CreateRecordRequest,
     ListRecordsResponse,
@@ -13,7 +12,7 @@ from services.record_service import RecordService
 router = APIRouter()
 
 
-@router.post("", response_model=RecordData)
+@router.post("", response_model=RecordData, response_model_exclude_none=True)
 def create_record(
     record_data: CreateRecordRequest, user_claims: dict = Depends(verify_access_token)
 ):
@@ -24,7 +23,7 @@ def create_record(
     return response
 
 
-@router.get("", response_model=ListRecordsResponse)
+@router.get("", response_model=ListRecordsResponse, response_model_exclude_none=True)
 def list_records(params: RecordQueryParams = Depends(), user_claims: dict = Depends(verify_access_token)):
     user_id = user_claims.get("sub")
     record_service = RecordService(user_id)
@@ -33,32 +32,32 @@ def list_records(params: RecordQueryParams = Depends(), user_claims: dict = Depe
     return response
 
 
-@router.get("/{timestamp}", response_model=RecordData)
-def get_record(timestamp: int, user_claims: dict = Depends(verify_access_token)):
+@router.get("/{recordId}", response_model=RecordData, response_model_exclude_none=True)
+def get_record(recordId: str, user_claims: dict = Depends(verify_access_token)):
     user_id = user_claims.get("sub")
     record_service = RecordService(user_id)
-    response = record_service.get_record(timestamp)
+    response = record_service.get_record(recordId)
 
     return response
 
 
-@router.delete("/{timestamp}", response_model=RecordData)
-def delete_record(timestamp: int, user_claims: dict = Depends(verify_access_token)):
+@router.delete("/{recordId}", response_model=RecordData, response_model_exclude_none=True)
+def delete_record(recordId: str, user_claims: dict = Depends(verify_access_token)):
     user_id = user_claims.get("sub")
     record_service = RecordService(user_id)
-    response = record_service.delete_record(timestamp)
+    response = record_service.delete_record(recordId)
 
     return response
 
 
-@router.put("/{timestamp}", response_model=RecordData)
+@router.put("/{recordId}", response_model=RecordData, response_model_exclude_none=True)
 def update_record(
-    timestamp: int,
+    recordId: str,
     record_data: UpdateRecordRequest,
     user_claims: dict = Depends(verify_access_token),
 ):
     user_id = user_claims.get("sub")
     record_service = RecordService(user_id)
-    response = record_service.update_record(timestamp, record_data)
+    response = record_service.update_record(recordId, record_data)
 
     return response

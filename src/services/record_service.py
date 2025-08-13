@@ -17,66 +17,73 @@ class RecordService:
         self.user_id = user_id
         self.record_repository = RecordRepository()
 
-    def get_record(self, timestamp: int) -> RecordData:
-        response = self.record_repository.get_record(self.user_id, timestamp)
+    def get_record(self, record_id: str) -> RecordData:
+        response = self.record_repository.get_record(self.user_id, record_id)
 
         if not response:
-            raise NotFoundException(f"Record {timestamp}")
+            raise NotFoundException(f"Record ID {record_id}")
 
         return response
 
     def create_record(self, record_data: CreateRecordRequest) -> RecordData:
+        record_id = str(uuid.uuid4())
+
         current_time = int(time.time() * 1000)
 
         record_model: RecordModel = self._build_record_model(
-            record_data.timestamp, record_data
+            record_id,
+            record_data,
+            record_type=record_data.recordType,
+            record_timestamp=record_data.recordTimestamp,
         )
         record_model.petId = record_data.petId
         record_model.createdAt = current_time
         record_model.updatedAt = current_time
 
-        response = self.record_repository.create_record(record_model.model_dump())
+        response = self.record_repository.create_record(
+            record_model.model_dump(exclude_none=True)
+        )
 
         return response
 
     def list_records(self, start_time: int, end_time: int) -> ListRecordsResponse:
-        items = self.record_repository.query_records(self.user_id, start_time=start_time, end_time=end_time)
+        items = self.record_repository.query_records(
+            self.user_id, start_time=start_time, end_time=end_time
+        )
 
         return ListRecordsResponse(records=items)
 
-    def delete_record(self, timestamp: int) -> RecordData:
-        response = self.record_repository.delete_record(self.user_id, timestamp)
+    def delete_record(self, record_id: str) -> RecordData:
+        response = self.record_repository.delete_record(self.user_id, record_id)
 
         return response
 
     def update_record(
-        self, timestamp: int, record_data: UpdateRecordRequest
+        self, record_id: str, record_data: UpdateRecordRequest
     ) -> RecordData:
-        record_model = self._build_record_model(timestamp, record_data)
+        record_model = self._build_record_model(record_id, record_data)
 
         response = self.record_repository.update_record(record_model)
         return response
 
     def _build_record_model(
-        self, timestamp: int, record_data: BaseRecordData
+        self,
+        recordId: str,
+        record_data: BaseRecordData,
+        *,
+        record_type: str = None,
+        record_timestamp: int = None,
     ) -> RecordModel:
-        record_model_data = {
-            "userId": self.user_id,
-            "timestamp": timestamp,
-            "weight": record_data.weight,
-            "temperature": record_data.temperature,
-            "stool": record_data.stool,
-            "stoolDetail": record_data.stoolDetail,
-            "urine": record_data.urine,
-            "urineDetail": record_data.urineDetail,
-            "mentalState": record_data.mentalState,
-            "mentalStateDetail": record_data.mentalStateDetail,
-            "appetite": record_data.appetite,
-            "appetiteDetail": record_data.appetiteDetail,
-            "waterIntake": record_data.waterIntake,
-            "foodIntake": record_data.foodIntake,
-            "medicationDetails": record_data.medicationDetails,
-            "vaccinationDetails": record_data.vaccinationDetails,
-        }
+
+        record_model_data = record_data.model_dump()
+
+        record_model_data["userId"] = self.user_id
+        record_model_data["recordId"] = recordId
+
+        if record_type:
+            record_model_data["recordType"] = record_type
+
+        if record_timestamp is not None:
+            record_model_data["recordTimestamp"] = record_timestamp
 
         return RecordModel(**record_model_data)
