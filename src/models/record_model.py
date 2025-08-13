@@ -5,8 +5,10 @@ import time
 
 class RecordModel(BaseModel):
     userId: str
-    timestamp: int
-
+    recordId: str
+    
+    recordTimestamp: Optional[int] = Field(None)
+    recordType: Optional[str] = Field(None)
     petId: Optional[str] = Field(None)
     weight: Optional[int] = Field(None)
     temperature: Optional[int] = Field(None)
@@ -32,7 +34,7 @@ class RecordModel(BaseModel):
 
     @property
     def sk(self) -> str:
-        return f"RECORD#{self.timestamp}"
+        return f"RECORD#{self.recordId}"
 
     def model_dump(self, *args, **kwargs) -> dict:
         data = super().model_dump(*args, **kwargs)
@@ -43,6 +45,6 @@ class RecordModel(BaseModel):
         data["SK"] = self.sk
 
         del data["userId"]
-        del data["timestamp"]
+        del data["recordId"]
         
         return data

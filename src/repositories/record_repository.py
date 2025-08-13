@@ -14,10 +14,11 @@ from boto3.dynamodb.conditions import Key, Attr
 
 class RecordRepository(BasicRepository):
     def __init__(self):
-        super().__init__(db_constants.PET_CARE_SYSTEM_TABLE)
+        super().__init__(db_constants.PET_CARE_RECORDS_TABLE)
+        self.INDEX_NAME = "PK-recordTimestamp-index"
 
-    def get_record(self, user_id: str, timestamp: int) -> RecordData:
-        key = {"PK": f"USER#{user_id}", "SK": f"RECORD#{timestamp}"}
+    def get_record(self, user_id: str, record_id: str) -> RecordData:
+        key = {"PK": f"USER#{user_id}", "SK": f"RECORD#{record_id}"}
 
         try:
             result = self.get_item(key=key)
@@ -25,7 +26,7 @@ class RecordRepository(BasicRepository):
             raise InternalErrorException()
 
         return self._parse_record_data(result.get("Item"))
-    
+
     def create_record(self, record_data: dict) -> RecordData:
 
         try:
@@ -34,25 +35,22 @@ class RecordRepository(BasicRepository):
                 condition_expression="attribute_not_exists(PK) AND attribute_not_exists(SK)",
             )
         except DBConditionalCheckFailedException:
-            raise AlreadyExistsException("Record")
+            raise AlreadyExistsException("Record ID")
         except DBException:
             raise InternalErrorException()
-        
+
         return self._parse_record_data(record_data)
 
     def query_records(
-        self, user_id: str, *, start_time: int = None, end_time: int = None
+        self, user_id: str, start_time: int, end_time: int
     ) -> list[RecordData]:
 
         response = []
 
-        query_key = Key("PK").eq(f"USER#{user_id}") & Key("SK").begins_with("RECORD")
+        query_key = Key("PK").eq(f"USER#{user_id}") & Key("recordTimestamp").between(
+            start_time, end_time
+        )
 
-        if start_time & end_time:
-            query_key = Key("PK").eq(f"USER#{user_id}") & Key("SK").between(
-                f"RECORD#{start_time}", f"RECORD#{end_time}"
-            )
-            
         try:
             done = False
             last_evaluated_key = None
@@ -61,6 +59,7 @@ class RecordRepository(BasicRepository):
                 result = self.query_items(
                     query_key,
                     exclusive_start_key=last_evaluated_key,
+                    index_name=self.INDEX_NAME,
                 )
                 last_evaluated_key = result.get("LastEvaluatedKey")
 
@@ -76,8 +75,8 @@ class RecordRepository(BasicRepository):
 
         return response
 
-    def delete_record(self, user_id: str, timestamp: int) -> RecordData:
-        key = {"PK": f"USER#{user_id}", "SK": f"RECORD#{timestamp}"}
+    def delete_record(self, user_id: str, record_id: str) -> RecordData:
+        key = {"PK": f"USER#{user_id}", "SK": f"RECORD#{record_id}"}
 
         try:
             result = self.delete_item(
@@ -85,18 +84,22 @@ class RecordRepository(BasicRepository):
                 condition_expression="attribute_exists(PK) AND attribute_exists(SK)",
             )
         except DBConditionalCheckFailedException:
-            raise NotFoundException(f"Record {timestamp}")
+            raise NotFoundException(f"Record ID {record_id}")
         except DBException:
             raise InternalErrorException()
 
         return self._parse_record_data(result.get("Attributes"))
-    
+
     def update_record(self, record_data: RecordModel):
         key = {"PK": record_data.pk, "SK": record_data.sk}
 
         update_expression = "Set updatedAt=:updatedAt"
         expression_value = {":updatedAt": record_data.updatedAt}
         expression_attribute_names = None
+
+        if record_data.recordTimestamp is not None:
+            update_expression += ", recordTimestamp=:recordTimestamp"
+            expression_value[":recordTimestamp"] = record_data.recordTimestamp
 
         if record_data.weight is not None:
             update_expression += ", weight=:weight"
@@ -105,7 +108,7 @@ class RecordRepository(BasicRepository):
         if record_data.temperature is not None:
             update_expression += ", temperature=:temperature"
             expression_value[":temperature"] = record_data.temperature
-            
+
         if record_data.stool is not None:
             update_expression += ", stool=:stool"
             expression_value[":stool"] = record_data.stool
@@ -148,11 +151,15 @@ class RecordRepository(BasicRepository):
 
         if record_data.medicationDetails is not None:
             update_expression += ", medicationDetails=:medicationDetails"
-            expression_value[":medicationDetails"] = record_data.model_dump().get("medicationDetails")
+            expression_value[":medicationDetails"] = record_data.model_dump().get(
+                "medicationDetails"
+            )
 
         if record_data.vaccinationDetails is not None:
             update_expression += ", vaccinationDetails=:vaccinationDetails"
-            expression_value[":vaccinationDetails"] = record_data.model_dump().get("vaccinationDetails")
+            expression_value[":vaccinationDetails"] = record_data.model_dump().get(
+                "vaccinationDetails"
+            )
 
         try:
             response = self.update_item(
@@ -163,7 +170,7 @@ class RecordRepository(BasicRepository):
                 condition_expression="attribute_exists(PK) AND attribute_exists(SK)",
             )
         except DBConditionalCheckFailedException:
-            raise NotFoundException(f"Record {record_data.createdAt}")
+            raise NotFoundException(f"Record ID {record_data.sk}")
         except DBException:
             raise InternalErrorException()
 
@@ -172,24 +179,15 @@ class RecordRepository(BasicRepository):
     def _parse_record_data(self, data: dict) -> RecordData:
         if not data:
             return None
-        return RecordData(
-            userId=data.get("PK").replace("USER#", ""),
-            timestamp=int(data.get("SK").replace("RECORD#", "")),
-            petId=data.get("petId"),
-            weight=data.get("weight"),
-            temperature=data.get("temperature"),
-            stool=data.get("stool"),
-            stoolDetail=data.get("stoolDetail"),
-            urine=data.get("urine"),
-            urineDetail=data.get("urineDetail"),
-            mentalState=data.get("mentalState"),
-            mentalStateDetail=data.get("mentalStateDetail"),
-            appetite=data.get("appetite"),
-            appetiteDetail=data.get("appetiteDetail"),
-            waterIntake=data.get("waterIntake"),
-            foodIntake=data.get("foodIntake"),
-            medicationDetails=data.get("medicationDetails"),
-            vaccinationDetails=data.get("vaccinationDetails"),
-            createdAt=data.get("createdAt"),
-            updatedAt=data.get("updatedAt"),
-        )
+        
+        user_id = data.get("PK").replace("USER#", "")
+        record_id = data.get("SK").replace("RECORD#", "")
+        
+        data["userId"] = user_id
+        data["recordId"] = record_id
+        data.pop("PK", None)
+        data.pop("SK", None)
+
+        record = RecordData(**data).model_dump(exclude_none=True)
+
+        return record

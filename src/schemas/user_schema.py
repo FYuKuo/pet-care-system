@@ -39,7 +39,6 @@ class AuthTokens(BaseModel):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.expiresAt = int(time.time()) + self.expiresIn
-        print(self.expiresAt)
 
 class UserData(BaseModel):
     userId: str = Field(description="user id")
